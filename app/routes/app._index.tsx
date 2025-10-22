@@ -101,11 +101,8 @@ export default function Index() {
   const generateProduct = () => fetcher.submit({}, { method: "POST" });
 
   return (
-    <s-page heading="Shopify app template">
-      <s-button slot="primary-action" onClick={generateProduct}>
-        Generate a product
-      </s-button>
-
+    <s-page heading="Overview">
+      
       <s-section heading="Congrats on creating a new Shopify app 🎉">
         <s-paragraph>
           This embedded app template uses{" "}
@@ -116,7 +113,7 @@ export default function Index() {
             App Bridge
           </s-link>{" "}
           interface examples like an{" "}
-          <s-link href="/app/additional">additional page in the app nav</s-link>
+          <s-link href="/app/settings">settings page in the app nav</s-link>
           , as well as an{" "}
           <s-link
             href="https://shopify.dev/docs/api/admin-graphql"
