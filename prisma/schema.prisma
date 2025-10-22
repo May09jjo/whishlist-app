@@ -30,3 +30,10 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
+
+// create settings model
+model Settings {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  description String?
+}

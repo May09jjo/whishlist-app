@@ -2,7 +2,7 @@
 
 client_id = "389ba96820c0ba56f7088fbed52e15dd"
 name = "whishlist-app"
-application_url = "https://example.com"
+application_url = "https://quotations-pen-upc-genealogy.trycloudflare.com"
 embedded = true
 
 [build]
@@ -25,4 +25,4 @@ api_version = "2026-01"
 scopes = "write_products"
 
 [auth]
-redirect_urls = [ "https://example.com/api/auth" ]
+redirect_urls = [ "https://quotations-pen-upc-genealogy.trycloudflare.com/api/auth" ]
