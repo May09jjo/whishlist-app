@@ -1,19 +1,76 @@
-import type { FormEvent } from "react";
+import prisma from "app/db.server";
+import { ActionFunctionArgs, redirect } from "react-router";
+import { Route } from "./+types/app.settings";
 
-export default function SettingsPage() {
-  const handleFormReset = () => {
-    console.log("Handle discarded changes if necessary");
-  };
+// convert or adapt the handleform to use with loaders from react router
+export const loader = async () => {
 
-  const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const formEntries = Object.fromEntries(formData);
-    console.log("Form data", formEntries);
-  };
+ const settings = await prisma.settings.findFirst();
+
+  console.log("Loaded settings", settings);
+  return settings;
+
+};
+
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const storeName = formData.get("store-name");
+  const businessAddress = formData.get("business-address");
+  const storePhone = formData.get("store-phone");
+  const currency = formData.get("currency");
+
+// convert curerency to enum type easy way
+  const convertEnum = (value: FormDataEntryValue | null) => {
+    if (value === "USD") return "USD";
+    if (value === "CAD") return "CAD";
+    if (value === "EUR") return "EUR";
+    return "USD"; // default
+  }
+
+  await prisma.settings.upsert({
+    where: { id: "1" }, // assuming a single settings record with id 1
+    update: {
+      storeName: String(storeName),
+      businessAddress: String(businessAddress),
+      storePhone: String(storePhone),
+      primaryCurrency: convertEnum(currency),
+    },
+    create: {
+      id: "1",
+      storeName: String(storeName),
+      businessAddress: String(businessAddress),
+      storePhone: String(storePhone),
+      primaryCurrency: convertEnum(currency),
+    },
+  });
+
+  console.log("Settings updated");
+
+  // After a successful POST/UPsert, redirect back to the same page so the
+  // loader runs and the client receives fresh loader data. Returning a 200
+  // without redirect leaves the page mounted with the original loaderData,
+  // which is why the UI shows stale/old values until a manual reload.
+  const url = new URL(request.url);
+  return redirect(url.pathname, { status: 303 });
+
+}
+
+export default function SettingsPage({loaderData}: Route.ComponentProps) {
+
+  // const handleFormReset = () => {
+  //   console.log("Handle discarded changes if necessary");
+  // };
+
+  // const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   const formData = new FormData(event.currentTarget);
+  //   const formEntries = Object.fromEntries(formData);
+  //   console.log("Form data", formEntries);
+  // };
+  console.log("Loader data in settings page", loaderData);
 
   return (
-    <form data-save-bar onSubmit={handleFormSubmit} onReset={handleFormReset}>
+    <form data-save-bar method="POST">
       <s-page heading="Settings" inlineSize="small">
         {/* === */}
         {/* Store Information */}
@@ -22,182 +79,34 @@ export default function SettingsPage() {
           <s-text-field
             label="Store name"
             name="store-name"
-            value="Puzzlify Store"
+            value={loaderData?.storeName || ''}
             placeholder="Enter store name"
           />
           <s-text-field
             label="Business address"
             name="business-address"
-            value="123 Main St, Anytown, USA"
+            value={loaderData?.businessAddress || ''}
             placeholder="Enter business address"
           />
           <s-text-field
             label="Store phone"
             name="store-phone"
-            value="+1 (555) 123-4567"
+            value={loaderData?.storePhone || ''}
             placeholder="Enter phone number"
           />
           <s-choice-list label="Primary currency" name="currency">
-            <s-choice value="usd" selected>
+            <s-choice value="USD" selected={loaderData?.primaryCurrency === 'USD'}>
               US Dollar ($)
             </s-choice>
-            <s-choice value="cad">Canadian Dollar (CAD)</s-choice>
-            <s-choice value="eur">Euro (€)</s-choice>
+            <s-choice value="CAD" selected={loaderData?.primaryCurrency === 'CAD'}>
+              Canadian Dollar (CAD)
+            </s-choice>
+            <s-choice value="EUR" selected={loaderData?.primaryCurrency === 'EUR'}>
+              Euro (€)
+            </s-choice>
           </s-choice-list>
         </s-section>
 
-        {/* === */}
-        {/* Notifications */}
-        {/* === */}
-        <s-section heading="Notifications">
-          <s-select
-            label="Notification frequency"
-            name="notification-frequency"
-          >
-            <s-option value="immediately" selected>
-              Immediately
-            </s-option>
-            <s-option value="hourly">Hourly digest</s-option>
-            <s-option value="daily">Daily digest</s-option>
-          </s-select>
-          <s-choice-list
-            label="Notification types"
-            name="notifications-type"
-            multiple
-          >
-            <s-choice value="new-order" selected>
-              New order notifications
-            </s-choice>
-            <s-choice value="low-stock">Low stock alerts</s-choice>
-            <s-choice value="customer-review">
-              Customer review notifications
-            </s-choice>
-            <s-choice value="shipping-updates">Shipping updates</s-choice>
-          </s-choice-list>
-        </s-section>
-
-        {/* === */}
-        {/* Preferences */}
-        {/* === */}
-        <s-section heading="Preferences">
-          <s-box border="base" borderRadius="base">
-            <s-clickable
-              padding="small-100"
-              href="/app/settings/shipping"
-              accessibilityLabel="Configure shipping methods, rates, and fulfillment options"
-            >
-              <s-grid
-                gridTemplateColumns="1fr auto"
-                alignItems="center"
-                gap="base"
-              >
-                <s-box>
-                  <s-heading>Shipping & fulfillment</s-heading>
-                  <s-paragraph color="subdued">
-                    Shipping methods, rates, zones, and fulfillment preferences.
-                  </s-paragraph>
-                </s-box>
-                <s-icon type="chevron-right" />
-              </s-grid>
-            </s-clickable>
-            <s-box paddingInline="small-100">
-              <s-divider />
-            </s-box>
-
-            <s-clickable
-              padding="small-100"
-              href="/app/settings/products_catalog"
-              accessibilityLabel="Configure product defaults, customer experience, and catalog settings"
-            >
-              <s-grid
-                gridTemplateColumns="1fr auto"
-                alignItems="center"
-                gap="base"
-              >
-                <s-box>
-                  <s-heading>Products & catalog</s-heading>
-                  <s-paragraph color="subdued">
-                    Product defaults, customer experience, and catalog display
-                    options.
-                  </s-paragraph>
-                </s-box>
-                <s-icon type="chevron-right" />
-              </s-grid>
-            </s-clickable>
-            <s-box paddingInline="small-100">
-              <s-divider />
-            </s-box>
-
-            <s-clickable
-              padding="small-100"
-              href="/app/settings/customer_support"
-              accessibilityLabel="Manage customer support settings and help resources"
-            >
-              <s-grid
-                gridTemplateColumns="1fr auto"
-                alignItems="center"
-                gap="base"
-              >
-                <s-box>
-                  <s-heading>Customer support</s-heading>
-                  <s-paragraph color="subdued">
-                    Support settings, help resources, and customer service
-                    tools.
-                  </s-paragraph>
-                </s-box>
-                <s-icon type="chevron-right" />
-              </s-grid>
-            </s-clickable>
-          </s-box>
-        </s-section>
-
-        {/* === */}
-        {/* Tools */}
-        {/* === */}
-        <s-section heading="Tools">
-          <s-stack
-            gap="none"
-            border="base"
-            borderRadius="base"
-            overflow="hidden"
-          >
-            <s-box padding="small-100">
-              <s-grid
-                gridTemplateColumns="1fr auto"
-                alignItems="center"
-                gap="base"
-              >
-                <s-box>
-                  <s-heading>Reset app settings</s-heading>
-                  <s-paragraph color="subdued">
-                    Reset all settings to their default values. This action
-                    cannot be undone.
-                  </s-paragraph>
-                </s-box>
-                <s-button tone="critical">Reset</s-button>
-              </s-grid>
-            </s-box>
-            <s-box paddingInline="small-100">
-              <s-divider />
-            </s-box>
-
-            <s-box padding="small-100">
-              <s-grid
-                gridTemplateColumns="1fr auto"
-                alignItems="center"
-                gap="base"
-              >
-                <s-box>
-                  <s-heading>Export settings</s-heading>
-                  <s-paragraph color="subdued">
-                    Download a backup of all your current settings.
-                  </s-paragraph>
-                </s-box>
-                <s-button>Export</s-button>
-              </s-grid>
-            </s-box>
-          </s-stack>
-        </s-section>
       </s-page>
     </form>
   );
