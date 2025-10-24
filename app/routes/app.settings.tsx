@@ -1,5 +1,6 @@
 import prisma from "app/db.server";
 import { ActionFunctionArgs, redirect } from "react-router";
+// eslint-disable-next-line import/no-unresolved
 import { Route } from "./+types/app.settings";
 
 // convert or adapt the handleform to use with loaders from react router
